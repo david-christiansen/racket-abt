@@ -66,11 +66,20 @@
       (string-append hint "a")
       (string-append (substring hint 0 (sub1 (string-length hint)))
                      (string (integer->char (add1 (char->integer last-char)))))))
+
+(module+ test
+  (check-equal? (string-incr "a") "b")
+  (check-equal? (string-incr "z") "za"))
+
 (define/contract (next-name hint used)
   (-> string? (listof string?) string?)
   (if (member hint used)
       (next-name (string-incr hint) used)
       hint))
+
+(module+ test
+  (check-equal? (next-name "aa" '("aa")) "ab")
+  (check-equal? (next-name "az" '("az")) "aza"))
 
 (define/contract (fresh-print-names n)
   (->i ((n exact-nonnegative-integer?))
@@ -458,7 +467,12 @@
   (check-true (has-sort? Expr (make-ap (make-nat 30) (make-nat 44))))
 
   ;; Printer testing
-  (check-equal? (format "~a" Expr) "#<sort:Expr>")
+  (check-equal?
+   (format "~a" Expr)
+   "#<sort:Expr>")
+  (check-equal?
+   (format "~a" add)
+   "#<lam #<sc ⟨a:Expr⟩.#<lam #<sc ⟨b:Expr⟩.#<bin #<:+: > a b>>>>>")
   
   ;; Zipper testing
   (define id-fun-zipper-1 (zip id-fun))
