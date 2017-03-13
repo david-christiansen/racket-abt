@@ -39,7 +39,7 @@
 (define Natural (sort 'Natural exact-nonnegative-integer?))
 (define Integer (sort 'Integer exact-integer?))
 (define the-primitive-sorts (list String Natural Integer))
-(define (primitive-sort? s)
+(define/contract (primitive-sort? s)
   (-> sort? boolean?)
   (not (not (member s the-primitive-sorts))))
 (define (has-primitive-sort? v)
