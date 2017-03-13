@@ -498,4 +498,9 @@
            (equal? y z)
            (not (equal? x z))
            (not (equal? y w)))]))
+
+  ;; Hash construction
+  (check-true (= (equal-hash-code (let ([x (fresh Expr "x")])
+                                    (make-lam (abs (list x) x))))
+                 (equal-hash-code id-fun)))
   )
