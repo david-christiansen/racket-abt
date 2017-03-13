@@ -457,7 +457,7 @@
   (check-true (has-sort? Expr (make-nat 42)))
   (check-true (has-sort? Expr (make-ap (make-nat 30) (make-nat 44))))
 
-  ;; testing some zipper
+  ;; Zipper testing
   (define id-fun-zipper-1 (zip id-fun))
   (define id-fun-zipper-2 (down/lam-body id-fun-zipper-1))
   (define id-fun-zipper-3 (down/scope id-fun-zipper-2))
@@ -472,8 +472,16 @@
   (check-not-equal?
    always-42
    id-fun)
+
+  ;; Match testing
   (check-equal?
    (match always-42 ((lam (in-scope (x) body)) body))
    42)
-  
+  (check-true
+   (match add
+     [(lam (in-scope (x) (lam (in-scope (y) (bin (:+:) w z)))))
+      (and (equal? x w)
+           (equal? y z)
+           (not (equal? x z))
+           (not (equal? y w)))]))
   )
