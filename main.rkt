@@ -19,7 +19,7 @@
 (struct sort (name predicate)
   #:methods gen:custom-write
   [(define (write-proc s port mode)
-     (fprintf (or port (current-output-port)) "#<sort:~a>" (sort-name s)))])
+     (fprintf port "#<sort:~a>" (sort-name s)))])
 
 (define/contract (has-sort? s v)
   (-> sort? any/c boolean?)
@@ -39,9 +39,6 @@
 (define Natural (sort 'Natural exact-nonnegative-integer?))
 (define Integer (sort 'Integer exact-integer?))
 (define the-primitive-sorts (list String Natural Integer))
-(define/contract (primitive-sort? s)
-  (-> sort? boolean?)
-  (not (not (member s the-primitive-sorts))))
 (define (has-primitive-sort? v)
   (for/or ([prim the-primitive-sorts])
     (has-sort? prim v)))
@@ -105,7 +102,7 @@
                                     ", ")
                                    "⟩"))
      (parameterize ([used-names (append temps (used-names))])
-       (fprintf (or port (current-output-port)) "#<sc ~a.~a>" binder (scope-body sc))))]
+       (fprintf port "#<sc ~a.~a>" binder (scope-body sc))))]
   #:property prop:bindings
   (binder
    ;; abs
