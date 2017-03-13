@@ -457,6 +457,9 @@
   (check-true (has-sort? Expr (make-nat 42)))
   (check-true (has-sort? Expr (make-ap (make-nat 30) (make-nat 44))))
 
+  ;; Printer testing
+  (check-equal? (format "~a" Expr) "#<sort:Expr>")
+  
   ;; Zipper testing
   (define id-fun-zipper-1 (zip id-fun))
   (define id-fun-zipper-2 (down/lam-body id-fun-zipper-1))
