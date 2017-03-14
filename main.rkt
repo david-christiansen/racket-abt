@@ -27,6 +27,22 @@
       (equal? s (free-name-sort v))
       ((sort-predicate s) v)))
 
+(define (guard-sort name valence srt v)
+  (cond [(and (empty? valence) (has-sort? srt v))
+         v]
+        [(and (not (empty? valence))
+              (scope? v)
+              (match-let ([(cons frees body) (auto-inst v)])
+                (and (has-sort? srt body)
+                     (equal? valence (map free-name-sort frees)))))
+         v]
+        [else
+         (define what
+           (if (empty? valence)
+               (format "~a" srt)
+               (format "⟨~a⟩.~a" valence srt)))
+         (raise-argument-error name what v)]))
+
 (struct binder (abs inst) #:transparent)
 
 (define-values (prop:bindings has-prop:bindings? real-bindings-accessor)
@@ -286,7 +302,7 @@
                       (cons (format-id #'op "~a-~a-frame" #'op (car post)) (append pre (cdr post))))]
                    [(down/op-field ...)
                     (for/list ([f fields])
-                      (format-id #'op "down/~a-~a" #'op f))]
+                      (format-id #'op "down/~a-~a" #'op f #:source #'op))]
                    [(field-ix ...) (range 0 (length fields))]
                    [(((before-temp ...) (after-temp ...)) ...)
                     (for/list ([i (in-range 0 (length fields))])
@@ -411,7 +427,24 @@
                       (? op?
                          (and (app (lambda (x)
                                      (acc x field-index))
-                                   field-temp) ...))))]))) ...
+                                   field-temp) ...))))]))
+             (lambda (stx)
+               (syntax-parse stx
+                 [(_ field-temp ...)
+                  (with-syntax ([(field-temp-copy (... ...)) #'(field-temp ...)]
+                                [(field-sort-copy (... ...)) #'(field-sort ...)]
+                                [((var-sort (... ...)) (... ...)) #'((bound-sort ...) ...)]
+                                [(extra-temp (... ...))
+                                 (generate-temporaries (syntax->list #'(field-temp ...)))])
+                    (syntax/loc stx
+                      (let ((extra-temp
+                             (guard-sort 'op
+                                         (list var-sort (... ...))
+                                         field-sort-copy
+                                         field-temp-copy))
+                            (... ...))
+                        (make-op extra-temp (... ...)))))])))
+           ...
            (define-op-zipper op make-op op? op-acc field-name ...)
            ...
            (define (sort-name? x)
@@ -442,19 +475,16 @@
   (lam (body (Expr) Expr)))
 
 (define always-42
-  (make-lam (abs (list (fresh Expr "n")) 42)))
+  (lam (in-scope ((n Expr)) (nat 42))))
 
 (define id-fun
   (let ([x (fresh Expr "x")])
-    (make-lam (abs (list x) x))))
+    (lam (in-scope ((x Expr)) x))))
 
 (define add
-  (let ([x (fresh Expr "x")]
-        [y (fresh Expr "y")])
-    (make-lam (in-scope ((x Expr))
-                (make-lam
-                 (in-scope ((y Expr))
-                  (make-bin (make-:+:) x y)))))))
+  (lam (in-scope ((x Expr))
+          (lam (in-scope ((y Expr))
+                  (bin (:+:) x y))))))
 
 
 
@@ -490,7 +520,7 @@
   ;; Match testing
   (check-equal?
    (match always-42 ((lam (in-scope (x) body)) body))
-   42)
+   (nat 42))
   (check-true
    (match add
      [(lam (in-scope (x) (lam (in-scope (y) (bin (:+:) w z)))))
@@ -503,4 +533,26 @@
   (check-true (= (equal-hash-code (let ([x (fresh Expr "x")])
                                     (make-lam (abs (list x) x))))
                  (equal-hash-code id-fun)))
+
+  ;; Dynamic sort enforcement
+  (check-exn
+   exn:fail:contract?
+   (thunk
+    (lam (in-scope ((x Expr)) 42))))
+  (check-exn
+   exn:fail:contract?
+   (thunk
+    (lam (in-scope ((x Natural)) (nat 42)))))
+  (check-exn
+   exn:fail:contract?
+   (thunk
+    (lam (in-scope ((x Expr)) (nat x)))))
+  (check-exn
+   exn:fail:contract?
+   (thunk
+    (lam (in-scope ((x Natural)) (nat x)))))
+  (check-exn
+   exn:fail:contract?
+   (thunk
+    (lam (nat 42))))
   )
