@@ -544,6 +544,9 @@
   (check-true (= (equal-hash-code (let ([x (fresh Expr "x")])
                                     (make-lam (abs (list x) x))))
                  (equal-hash-code id-fun)))
+  (check-true (= (equal-secondary-hash-code (let ([x (fresh Expr "x")])
+                                    (make-lam (abs (list x) x))))
+                 (equal-secondary-hash-code id-fun)))
 
   ;; Dynamic sort enforcement
   (check-exn
