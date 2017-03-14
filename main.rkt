@@ -514,7 +514,9 @@
   
   ;; Zipper testing
   (define id-fun-zipper-1 (zip id-fun))
+  (check-false (can-move? down/scope id-fun-zipper-1))
   (define id-fun-zipper-2 (down/lam-body id-fun-zipper-1))
+  (check-true (can-move? down/scope id-fun-zipper-2))
   (define id-fun-zipper-3 (down/scope id-fun-zipper-2))
   (define id-fun-zipper-4 (up id-fun-zipper-3))
   (define id-fun-zipper-5 (up id-fun-zipper-4))
@@ -569,4 +571,6 @@
    exn:fail:contract?
    (thunk
     (lam (nat 42))))
-  )
+
+  ;; Others
+  (check-false (sorts-match? (list Expr) '())))
