@@ -7,8 +7,8 @@
 (module+ test (require rackunit))
 
 ;; TODO:
-;;  1. Add needed dynamic well-sortedness checks
-;;  2. Add match expanders for constructing terms as well
+;;  ✓ 1. Add needed dynamic well-sortedness checks
+;;  ✓ 2. Add match expanders for constructing terms as well
 ;;  3. Second-order variables
 ;;  4. Symbols and symbol binders (to support e.g. (ν (x) body))
 ;;  5. Provide form for a sort (provide (sort-out Expr))
@@ -350,12 +350,13 @@
      (define ops (syntax->list #'(op ...)))
      (define (formatted str)
        (for/list ([op-name (in-list ops)])
-         (format-id op-name str op-name)))
+         (format-id op-name str op-name #:source op-name)))
      (with-syntax ([(op-ty ...) (formatted "~a-type")]
                    [(make-op ...) (formatted "make-~a")]
+                   [(internal-make-op ...) (generate-temporaries ops)]
                    [(op? ...) (formatted "~a?")]
-                   [(op-acc ...) (formatted "~a-acc")]
-                   [(op-mut ...) (formatted "~a-mut")]
+                   [(op-acc ...) (generate-temporaries ops)]
+                   [(op-mut ...) (generate-temporaries ops)]
                    [((op-field-frame ...) ...)
                     (for*/list ([op (in-list ops)]
                                 [fs (in-list (syntax->list #'((field-name ...) ...)))])
@@ -372,7 +373,7 @@
                    [sort-name? (format-id #'sort-name "~a?" #'sort-name)])
        (syntax/loc stx
          (begin
-           (define-values (op-ty make-op op? op-acc op-mut)
+           (define-values (op-ty internal-make-op op? op-acc op-mut)
              (make-struct-type 'op #f field-count 0 #f
                                (list
                                 (cons prop:bindings
@@ -385,7 +386,7 @@
                                               (match-let ([(binder abs _) (bindings-accessor field-val)])
                                                (abs field-val frees i))))
                                          ...
-                                         (make-op field-temp ...))
+                                         (internal-make-op field-temp ...))
                                        ;; inst
                                        (lambda (old-expr i new-exprs)
                                          (define acc op-acc) ;; ellipsis count hack
@@ -394,7 +395,7 @@
                                              (match-let ([(binder _ inst) (bindings-accessor field-val)])
                                                (inst field-val i new-exprs))))
                                          ...
-                                         (make-op field-temp ...))))
+                                         (internal-make-op field-temp ...))))
                                 (cons prop:custom-write ;; TODO figure out how to port to gen:custom-write
                                       (lambda (me port mode)
                                         (define acc op-acc)
@@ -417,6 +418,15 @@
                                       (lambda (x rec-hash)
                                         (define acc op-acc)
                                         (bitwise-xor (rec-hash (acc x field-index)) ...))))))
+           ...
+           (define (make-op field-temp ...)
+             (define op-name 'op)
+             (internal-make-op
+              (guard-sort op-name
+                          (list bound-sort ...)
+                          field-sort
+                          field-temp)
+              ...))
            ...
            (define-match-expander op
              (lambda (stx)
