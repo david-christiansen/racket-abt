@@ -1,7 +1,9 @@
-#lang racket
+#lang racket/base
 
-(require (for-syntax racket/list syntax/parse racket/syntax (for-syntax racket/base))
-         racket/fixnum racket/provide-syntax
+(require (for-syntax racket/base racket/list syntax/parse racket/syntax
+                     (for-syntax racket/base))
+         racket/contract racket/fixnum racket/function racket/list racket/match racket/provide-syntax
+         racket/set racket/string
          zippers)
 
 (module+ test (require rackunit))
