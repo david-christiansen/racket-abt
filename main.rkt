@@ -339,8 +339,7 @@
                 (zipper new-focus (cons new-frame ctxt)))
               (lambda (z)
                 (op? (zipper-focus z)))))
-           ...
-           (void))))]))
+           ...)))]))
 
 (define-syntax (define-sort stx)
   (syntax-parse stx
@@ -502,8 +501,8 @@
 
 (module+ test
   (check-true (has-sort? Natural 42))
-  (check-true (has-sort? Expr (make-nat 42)))
-  (check-true (has-sort? Expr (make-ap (make-nat 30) (make-nat 44))))
+  (check-true (has-sort? Expr (nat 42)))
+  (check-true (has-sort? Expr (ap (nat 30) (nat 44))))
 
   ;; Printer testing
   (check-equal?
